@@ -23,6 +23,19 @@ My recent work spans call quality evaluation, speech recognition, speaker diariz
 | Frontend | TypeScript, React, Next.js, Tailwind CSS, TanStack Query |
 | Infrastructure | Linux, Docker, Nginx, CUDA, PyTorch |
 
+## GitHub activity
+
+<p align="center">
+  <img src="https://github-stats-extended.vercel.app/api?username=AhmadHanif12&amp;show_icons=true&amp;theme=github_dark&amp;hide_border=true&amp;include_all_commits=true&amp;hide_rank=true&amp;hide=stars,issues,contribs" alt="Public GitHub commit and pull request statistics" width="49%" />
+  <img src="https://streak-stats.demolab.com?user=AhmadHanif12&amp;theme=github-dark-blue&amp;hide_border=true" alt="GitHub total contributions, current streak, and longest streak" width="49%" />
+</p>
+
+<p align="center">
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=AhmadHanif12&amp;theme=github_dark" alt="Daily GitHub contributions over the last year" width="100%" />
+</p>
+
+<sub>Activity cards follow GitHub's public visibility settings. Private company work may be excluded; repository statistics cover public repositories.</sub>
+
 ## Public work
 
 **[EasyClaude](https://github.com/AhmadHanif12/EasyClaude)** — a desktop launcher for opening Claude Code in a project directory through a global hotkey.
