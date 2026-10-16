@@ -26,15 +26,16 @@ My recent work spans call quality evaluation, speech recognition, speaker diariz
 ## GitHub activity
 
 <p align="center">
-  <img src="https://github-stats-extended.vercel.app/api?username=AhmadHanif12&amp;show_icons=true&amp;theme=github_dark&amp;hide_border=true&amp;include_all_commits=true&amp;hide_rank=true&amp;hide=stars,issues,contribs" alt="Public GitHub commit and pull request statistics" width="49%" />
-  <img src="https://streak-stats.demolab.com?user=AhmadHanif12&amp;theme=github-dark-blue&amp;hide_border=true" alt="GitHub total contributions, current streak, and longest streak" width="49%" />
+  <img src="https://streak-stats.demolab.com/?user=ahmadhanif12&amp;theme=github-dark-blue&amp;hide_border=true" alt="GitHub total contributions, current streak, and longest streak, including anonymous private contributions" width="70%" />
 </p>
 
 <p align="center">
-  <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=AhmadHanif12&amp;theme=github_dark" alt="Daily GitHub contributions over the last year" width="100%" />
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=ahmadhanif12&amp;theme=github_dark" alt="Daily GitHub contributions over the last year, including anonymous private contributions" width="100%" />
 </p>
 
-<sub>Activity cards follow GitHub's public visibility settings. Private company work may be excluded; repository statistics cover public repositories.</sub>
+**708 pull requests** across public and private repositories — verified on 16 October 2026.
+
+<sub>Activity cards update from GitHub's contribution calendar and include anonymous private contributions. The pull request count above is a dated snapshot.</sub>
 
 ## Public work
 
