@@ -5,12 +5,17 @@ from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 import re
+from time import sleep
 from urllib.request import Request, urlopen
 
 USERNAME = "AhmadHanif12"
 SOURCE = f"https://github.com/users/{USERNAME}/contributions"
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 COLORS = ["#e6e9e1", "#bdd8c6", "#7bbf9a", "#3b946a", "#176447"]
+
+
+class CalendarTotalMismatch(ValueError):
+    """GitHub returned totals that cannot yet be published consistently."""
 
 
 class CalendarParser(HTMLParser):
@@ -64,8 +69,12 @@ def parse_calendar(html):
     if any(count < 0 or not 0 <= level <= 4 for _, count, level in days):
         raise ValueError("Invalid contribution count or intensity")
     match = re.search(r"([\d,]+)\s+contributions?\s+in the last year", " ".join(parser.heading))
-    if not match or int(match[1].replace(",", "")) != sum(count for _, count, _ in days):
-        raise ValueError("Day counts do not match GitHub's displayed total")
+    if not match:
+        raise ValueError("Could not read GitHub's displayed total")
+    displayed = int(match[1].replace(",", ""))
+    counted = sum(count for _, count, _ in days)
+    if displayed != counted:
+        raise CalendarTotalMismatch(f"Day counts ({counted}) do not match GitHub's displayed total ({displayed})")
     return days
 
 
@@ -143,16 +152,25 @@ def render_calendar(days, now):
 
 def main():
     now = datetime.now(timezone.utc)
-    request = Request(SOURCE, headers={
-        "User-Agent": f"{USERNAME}-profile-activity",
-        "Accept-Language": "en-US",
-        "Cache-Control": "no-cache",
-    })
-    with urlopen(request, timeout=30) as response:
-        html = response.read(2_000_001)
-    if len(html) > 2_000_000:
-        raise ValueError("Unexpectedly large calendar response")
-    days = parse_calendar(html.decode("utf-8"))
+    for attempt in range(3):
+        request = Request(f"{SOURCE}?_refresh={int(now.timestamp())}-{attempt}", headers={
+            "User-Agent": f"{USERNAME}-profile-activity",
+            "Accept-Language": "en-US",
+            "Cache-Control": "no-cache",
+        })
+        with urlopen(request, timeout=30) as response:
+            html = response.read(2_000_001)
+        if len(html) > 2_000_000:
+            raise ValueError("Unexpectedly large calendar response")
+        try:
+            days = parse_calendar(html.decode("utf-8"))
+            break
+        except CalendarTotalMismatch as error:
+            if attempt == 2:
+                print(f"::warning::{error}. Keeping the last verified cards and their original update time.")
+                return
+            print(f"{error}. Retrying calendar fetch ({attempt + 2}/3).")
+            sleep(attempt + 1)
     if days[-1][0] != now.date():
         raise ValueError("GitHub calendar has not reached the current UTC day")
     stats = render_stats(days, now)

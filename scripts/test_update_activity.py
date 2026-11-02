@@ -1,8 +1,13 @@
 from datetime import date, datetime, timedelta, timezone
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 from xml.etree import ElementTree
 
-from update_activity import parse_calendar, summarize, render_stats, render_calendar
+from update_activity import main, parse_calendar, summarize, render_stats, render_calendar
 
 
 def fixture(counts=None):
@@ -46,6 +51,56 @@ class ActivityTest(unittest.TestCase):
         for replacement in ["2025-10-28", "2025-10-30"]:
             with self.assertRaisesRegex(ValueError, "duplicated or incomplete"):
                 parse_calendar(fixture().replace('data-date="2025-10-29"', f'data-date="{replacement}"'))
+
+    def test_inconsistent_response_retries_then_publishes_verified_data(self):
+        valid = fixture([0] * 364 + [3])
+        invalid = valid.replace("3 contributions in the last year", "4 contributions in the last year")
+        with TemporaryDirectory() as directory:
+            assets = Path(directory)
+            responses = []
+            for html in (invalid, valid):
+                response = MagicMock()
+                response.__enter__.return_value.read.return_value = html.encode()
+                responses.append(response)
+            with patch("update_activity.ASSETS", assets), patch("update_activity.datetime") as clock, patch("update_activity.urlopen", side_effect=responses) as request, patch("update_activity.sleep") as sleep, redirect_stdout(StringIO()):
+                clock.now.return_value = datetime(2026, 10, 27, 12, tzinfo=timezone.utc)
+                main()
+            self.assertEqual(request.call_count, 2)
+            sleep.assert_called_once_with(1)
+            self.assertIn("3 contributions", (assets / "activity.svg").read_text())
+            self.assertIn("2026-10-27: 3 contributions", (assets / "calendar.svg").read_text())
+
+    def test_repeated_total_mismatch_keeps_existing_cards_with_warning(self):
+        html = fixture().replace("0 contributions in the last year", "99 contributions in the last year")
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = html.encode()
+        with TemporaryDirectory() as directory:
+            assets = Path(directory)
+            for name in ("activity.svg", "calendar.svg"):
+                (assets / name).write_text("last verified card")
+            output = StringIO()
+            with patch("update_activity.ASSETS", assets), patch("update_activity.datetime") as clock, patch("update_activity.urlopen", return_value=response) as request, patch("update_activity.sleep") as sleep, redirect_stdout(output):
+                clock.now.return_value = datetime(2026, 10, 27, 12, tzinfo=timezone.utc)
+                main()
+            self.assertEqual(request.call_count, 3)
+            self.assertEqual([call.args for call in sleep.call_args_list], [(1,), (2,)])
+            self.assertIn("::warning::", output.getvalue())
+            for name in ("activity.svg", "calendar.svg"):
+                self.assertEqual((assets / name).read_text(), "last verified card")
+
+    def test_malformed_calendar_still_fails_without_overwriting_cards(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b"<html>Incomplete calendar</html>"
+        with TemporaryDirectory() as directory:
+            assets = Path(directory)
+            (assets / "activity.svg").write_text("last verified card")
+            with patch("update_activity.ASSETS", assets), patch("update_activity.urlopen", return_value=response) as request, patch("update_activity.sleep") as sleep:
+                with self.assertRaisesRegex(ValueError, "missing day counts"):
+                    main()
+            request.assert_called_once()
+            sleep.assert_not_called()
+            self.assertEqual((assets / "activity.svg").read_text(), "last verified card")
+            self.assertFalse((assets / "calendar.svg").exists())
 
     def test_render_is_accessible_svg_without_external_services(self):
         days = parse_calendar(fixture())
